@@ -1,167 +1,8 @@
+/* global __APP_VERSION__ */
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { SENSOR_GROUPS, SENSOR_DB, MOUNT_DB } from "./data/index.js";
 
-// Load Noto Sans from Google Fonts
-const fontLink = document.createElement("link");
-fontLink.rel = "stylesheet";
-fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500;600;700&display=swap";
-document.head.appendChild(fontLink);
-
-// ─── Sensor Groups ─────────────────────────────────────────────────────────────
-// Each group has an id, label, color accent, and array of sensors.
-// Allied Vision sensors use actual physical dimensions derived from sensor specs.
-// Sony Pregius S physical sizes: pixel_size × resolution pixels
-//   IMX547: 2.74µm × 2448×2048 → 6.71×5.61mm → 1/1.8"
-//   IMX546: 2.74µm × 2840×2840 → 7.78×7.78mm → 2/3"
-//   IMX545: 2.74µm × 4096×3000 → 11.22×8.22mm → 1/1.1"
-//   IMX542: 2.74µm × 5320×3032 → 14.58×8.31mm → 1"
-//   IMX541: 2.74µm × 4512×4512 → 12.36×12.36mm → 1" (sq)
-//   IMX540: 2.74µm × 5328×4608 → 14.60×12.63mm → 1.2"
-//   IMX535: 2.74µm × 4096×3008 → 11.22×8.24mm (same as 545, slightly diff res)
-//   IMX487 (UV): 2.74µm × 2840×2840 → 7.78×7.78mm → 2/3"
-//   IMX455: 3.76µm × 9568×6380 → 35.98×23.99mm → 35mm FF
-//   IMX461: 3.76µm × 11664×8750 → 43.86×32.90mm → medium format (44×33mm)
-//   IMX411: 3.76µm × 14208×10656 → 53.42×40.07mm → 53×40mm
-//   IMX661: 3.45µm × 13392×9528 → 46.20×32.87mm → 3.6" type
-//   IMX342: 3.45µm × 6480×4860 → 22.36×16.77mm → APS-C
-//   IMX252: 3.45µm × 2048×1536 → 7.07×5.30mm → 2/3"
-//   For HR legacy CCD sensors:
-//   NOIP1SE025KA (ON Semi 25MP): 25MP, ~2/3" → approx same as Sony 2/3"
-//   Canon 120MXSC: ~120MP, 30×20mm
-//   ON Semi PYTHON 25K: 25MP, 23×23mm
-
-const SENSOR_GROUPS = [
-  {
-    id: "reference",
-    label: "Reference Formats",
-    color: "#555",
-    sensors: [
-      { id: "MF_ref",    name: "Medium Format",   format: "GFX",       w: 43.8,  h: 32.9,  mp: 100, note: "GFX / IMX461 class" },
-      { id: "FF_ref",    name: "Full Frame 35mm",  format: "35mm",      w: 36.0,  h: 24.0,  mp: 61,  note: "IMX455 class" },
-      { id: "APS-C",     name: "APS-C",           format: "APS-C",     w: 23.5,  h: 15.6,  mp: 24,  note: "Typical Nikon APS-C" },
-      { id: "ind_4_3",   name: '4/3" Industrial', format: '4/3"',      w: 17.6,  h: 13.2,  mp: 16,  note: "Type 4/3\"" },
-      { id: "1_0",       name: '1"',              format: '1"',        w: 12.8,  h: 9.6,   mp: 9,   note: "Type 1\"" },
-      { id: "2_3_ref",   name: '2/3"',            format: '2/3"',      w: 8.8,   h: 6.6,   mp: 5,   note: "Type 2/3\"" },
-      { id: "1_1.8_ref", name: '1/1.8"',          format: '1/1.8"',    w: 7.18,  h: 5.32,  mp: 5,   note: "Type 1/1.8\"" },
-      { id: "1_2_ref",   name: '1/2"',            format: '1/2"',      w: 6.4,   h: 4.8,   mp: 3,   note: "Type 1/2\"" },
-    ]
-  },
-  {
-    id: "fxo",
-    label: "FXO Series (Allied Vision / SVS-Vistek)",
-    color: "#1a5fcc",
-    sensors: [
-      // ── Sony Pregius S 4th gen (2.74µm BSI) ──────────────────────────────
-      // IMX530/540: 5328×4608 → 14.60×12.63mm (Type 1.2", shared sensor die)
-      { id: "fxo_540",  name: "FXO 540/530 · 24.5MP", format: '1.2"',   w: 14.60, h: 12.63, mp: 24.5, note: "IMX540/530 · C-mount · 10GigE/25GigE/CXP-12" },
-      // IMX532/542: 5328×3040 → 14.60×8.33mm (Type 1")
-      { id: "fxo_542",  name: "FXO 542/532 · 16.1MP", format: '1"',     w: 14.60, h:  8.33, mp: 16.1, note: "IMX542/532 · C-mount · 10GigE/25GigE/CXP-12" },
-      // IMX531/541: 4512×4512 → 12.36×12.36mm (Type 1.1" square)
-      { id: "fxo_541",  name: "FXO 541/531 · 20.4MP", format: '1.1"sq', w: 12.36, h: 12.36, mp: 20.4, note: "IMX541/531 · C-mount · square sensor" },
-      // IMX535/545: 4128×3008 × 2.74µm → 11.31×8.24mm (Type 1.1")
-      { id: "fxo_545",  name: "FXO 545/535 · 12.2MP", format: '1.1"',   w: 11.31, h:  8.24, mp: 12.2, note: "IMX545/535 · C-mount · 10GigE/25GigE/CXP-12" },
-      // IMX546: 2856×2848 × 2.74µm → 7.83×7.80mm (Type 2/3", near-square)
-      { id: "fxo_546",  name: "FXO 546 · 8.1MP",      format: '2/3"sq', w:  7.83, h:  7.80, mp:  8.1, note: "IMX546 · C-mount · square sensor · CXP-12" },
-      // IMX487 (UV): 2856×2848 × 2.74µm → 7.83×7.80mm (same die as IMX546)
-      { id: "fxo_487",  name: "FXO 487 · 8.1MP UV",   format: '2/3"',   w:  7.83, h:  7.80, mp:  8.1, note: "IMX487 · UV 200-400nm · 10GigE/CXP-12" },
-      // IMX547: 2472×2064 × 2.74µm → 6.77×5.66mm (Type 1/1.8")
-      { id: "fxo_547",  name: "FXO 547 · 5.1MP",      format: '1/1.8"', w:  6.77, h:  5.66, mp:  5.1, note: "IMX547 · C-mount · 10GigE/CXP-12" },
-      // ── Sony Pregius S 3rd gen (4.5µm) ───────────────────────────────────
-      // IMX420: 3216×2208 → 14.47×9.94mm (Type ~1", 4.5µm pixel)
-      { id: "fxo_420",  name: "FXO 420 · 7.1MP",      format: '~1"',    w: 14.47, h:  9.94, mp:  7.1, note: "IMX420 · 3rd gen · 4.5µm · CXP-12 (2x)" },
-      // IMX421: 4512×4512 square → 20.3×20.3mm but 4.5µm → same die as 420 era? Actually IMX421 = 4096×2160, 4.5µm → 18.43×9.72mm
-      // Based on FXO naming convention and 3rd gen lineup, IMX421 = 4096×2160 = 8.9MP
-      { id: "fxo_421",  name: "FXO 421 · 2.8MP",      format: '2/3"',   w:  8.75, h:  6.62, mp:  2.8, note: "IMX421 · 3rd gen · 4.5µm · CXP-12 (2x)" },
-      // IMX425: 1600×1104 → 7.20×4.97mm (4.5µm pixel, Type ~1/2")
-      { id: "fxo_425",  name: "FXO 425 · 1.8MP",      format: '~1/2"',  w:  7.20, h:  4.97, mp:  1.8, note: "IMX425 · 3rd gen · 4.5µm · 671fps · CXP-12 (2x)" },
-      // ── SWIR ─────────────────────────────────────────────────────────────
-      // IMX992: 2560×2048 → 8.83×7.07mm (3.45µm pixel, Type 1/1.1" SWIR)
-      { id: "fxo_992",  name: "FXO 992 · 5.2MP SWIR", format: '1/1.1"', w:  8.83, h:  7.07, mp:  5.2, note: "IMX992 · SWIR 400-1700nm · 3.45µm · 10GigE-T" },
-      // ── Sony Pregius S 5th gen (2.74µm BSI stacked) — FXO 100GigE ────────
-      // IMX925: 5312×4608 × 2.74µm = 14.56×12.63mm (Type 1.2", 19.3mm diag) — confirmed via fxo925M100GE
-      { id: "fxo_925",  name: "FXO 925 · 24.5MP",    format: '1.2"',   w: 14.56, h: 12.63, mp: 24.5, note: "IMX925 · 5th gen · 2.74µm · 442fps · C-mount · 100GigE" },
-      // IMX935: same die as IMX925, lower-power variant — identical sensor size
-      { id: "fxo_935",  name: "FXO 935 · 24.5MP",    format: '1.2"',   w: 14.56, h: 12.63, mp: 24.5, note: "IMX935 · 5th gen · 2.74µm · low-power · C-mount · 100GigE" },
-      // IMX926: 4096×3040 × 2.74µm = 11.22×8.33mm (Type 1/1.1", 14.0mm diag) — up to 661fps
-      { id: "fxo_926",  name: "FXO 926 · 12.4MP",    format: '1/1.1"', w: 11.22, h:  8.33, mp: 12.4, note: "IMX926 · 5th gen · 2.74µm · 661fps · C-mount · 100GigE" },
-      // IMX936: same die as IMX926, lower-power variant — identical sensor size
-      { id: "fxo_936",  name: "FXO 936 · 12.4MP",    format: '1/1.1"', w: 11.22, h:  8.33, mp: 12.4, note: "IMX936 · 5th gen · 2.74µm · low-power · C-mount · 100GigE" },
-    ]
-  },
-  {
-    id: "hr",
-    label: "HR Series (Allied Vision / SVS-Vistek)",
-    color: "#16a085",
-    sensors: [
-      // ── HR 10GigE / CXP: M58 mount ───────────────────────────────────────
-      { id: "hr_455",    name: "HR 455 · 61MP",         format: "35mm FF",   w: 35.98, h: 23.99, mp: 61,    note: "IMX455 · M58 · 10GigE/CXP · rolling · TEC opt." },
-      { id: "hr_342",    name: "HR 342 · 22.3MP",        format: "APS-C",     w: 22.37, h: 16.77, mp: 22.3,  note: "IMX342 · M58 · global shutter · 3.45µm" },
-      // IMX183: 5496×3672 × 2.4µm → 13.19×8.81mm (Type 1")
-      { id: "hr_183",    name: "HR 183 · 20MP",          format: '1"',        w: 13.19, h:  8.81, mp: 20,    note: "IMX183 · M58 · rolling · 2.4µm" },
-      // IMX304: 4112×3008 × 3.45µm → 14.19×10.38mm (Type 1.1")
-      { id: "hr_304",    name: "HR 304 · 12.4MP",        format: '1.1"',      w: 14.19, h: 10.38, mp: 12.4,  note: "IMX304 · M58 · global shutter · 3.45µm" },
-      // IMX253: 4112×3008 × 3.45µm → 14.19×10.38mm (Type 1.1" — not 2/3"!)
-      { id: "hr_253",    name: "HR 253 · 5MP",           format: '1.1"',      w: 14.19, h: 10.38, mp:  5,    note: "IMX253 · M58 · global shutter · 3.45µm" },
-      // IMX265: 2064×1544 × 3.45µm → 7.12×5.33mm (Type 1/1.8" — not 2/3"!)
-      { id: "hr_265",    name: "HR 265 · 3.2MP",         format: '1/1.8"',    w:  7.12, h:  5.33, mp:  3.2,  note: "IMX265 · M58 · global shutter · 3.45µm" },
-      // ── HR 100GigE: M52/M58/RF mount, IMX927 series ──────────────────────
-      // Sony IMX927 series — 5th gen Pregius S, 2.74µm BSI, SLVS-EC → 100GigE/CXPoF
-      // Physical size = pixel pitch × pixel count
-      // IMX927: 10272×10272 × 2.74µm = 28.15×28.15mm (Type 2.5", diag 39.7mm)
-      { id: "hr100_927", name: "HR 927 · 105MP",          format: 'Type 2.5"', w: 28.15, h: 28.15, mp: 105.5, note: "IMX927 · 2.74µm · global sh. · 100fps · M52/M58/RF" },
-      // IMX928: 8256×8256 × 2.74µm = 22.62×22.62mm (Type 2.0", diag 31.9mm)
-      { id: "hr100_928", name: "HR 928 · 68MP",           format: 'Type 2.0"', w: 22.62, h: 22.62, mp: 68.2,  note: "IMX928 · 2.74µm · global sh. · 126fps · M52/M58/RF" },
-      // IMX929: 8224×6176 × 2.74µm = 22.53×16.92mm (Type 1.8", diag 28.1mm)
-      { id: "hr100_929", name: "HR 929 · 51MP",           format: 'Type 1.8"', w: 22.53, h: 16.92, mp: 50.8,  note: "IMX929 · 2.74µm · global sh. · 201fps · M52/M58/RF" },
-      // IMX947: 5136×5136 × 5.48µm = 28.14×28.14mm (Type 2.5", larger pixel, higher sensitivity)
-      { id: "hr100_947", name: "HR 947 · 26MP",           format: 'Type 2.5"', w: 28.14, h: 28.14, mp: 26.4,  note: "IMX947 · 5.48µm · global sh. · 383fps · M52/M58/RF" },
-      // IMX949: 4112×3088 × 5.48µm = 22.53×16.92mm (Type 1.8", larger pixel)
-      { id: "hr100_949", name: "HR 949 · 13MP",           format: 'Type 1.8"', w: 22.53, h: 16.92, mp: 12.7,  note: "IMX949 · 5.48µm · global sh. · 722fps · M52/M58/RF" },
-    ]
-  },
-  {
-    id: "shr",
-    label: "SHR Series (Allied Vision / SVS-Vistek)",
-    color: "#8e44ad",
-    sensors: [
-      // SHR cameras: M72 mount, very large sensors (medium format and above)
-      // IMX811: 19200×12800 × 2.81µm → 53.95×35.97mm (Type 4.1")
-      { id: "shr_811",  name: "SHR 811 · 245MP",  format: '4.1"',      w: 53.95, h: 35.97, mp: 245,  note: "IMX811 · M72 · 19200×12800 · 2.81µm" },
-      // IMX411: 14192×10640 × 3.76µm → 53.36×40.01mm (Type 4.2")
-      { id: "shr_411",  name: "SHR 411 · 151MP",  format: '4.2"',      w: 53.36, h: 40.01, mp: 151,  note: "IMX411 · M72 · 14192×10640 · rolling" },
-      // IMX661: 13400×9528 × 3.45µm → 46.23×32.87mm (Type 3.6")
-      { id: "shr_661",  name: "SHR 661 · 128MP",  format: '3.6"',      w: 46.23, h: 32.87, mp: 128,  note: "IMX661 · M72 · 13400×9528 · global sh." },
-      // IMX461: 11656×8742 × 3.76µm → 43.83×32.87mm (Type 3.4")
-      { id: "shr_461",  name: "SHR 461 · 102MP",  format: '3.4"',      w: 43.83, h: 32.87, mp: 102,  note: "IMX461 · M72 · 11656×8742 · rolling" },
-    ]
-  },
-];
-
-// Flat sensor DB for lookups (derived from groups)
-const SENSOR_DB = SENSOR_GROUPS.flatMap(g => g.sensors.map(s => ({ ...s, groupId: g.id, groupColor: g.color })));
-
-// ─── Mount / Image Circle Database ────────────────────────────────────────────
-const MOUNT_DB = [
-  { id: "C",      name: "C-Mount",         type: "MV",    imageDiameter: 18.0,  notes: "Max ⌀18mm · most common industrial mount" },
-  { id: "CS",     name: "CS-Mount",        type: "MV",    imageDiameter: 18.0,  notes: "Like C, but 5mm shorter flange" },
-  { id: "S",      name: "S-Mount (M12)",   type: "MV",    imageDiameter: 8.0,   notes: "⌀8–10mm · board-level cameras" },
-  { id: "TFL",    name: "TFL-Mount (M35)", type: "MV",    imageDiameter: 22.0,  notes: "⌀22mm · targets 4/3\" sensor" },
-  { id: "M42",    name: "M42×1",           type: "MV",    imageDiameter: 28.8,  notes: "⌀28.8mm · industrial & legacy" },
-  { id: "M58",    name: "M58×0.75",        type: "MV",    imageDiameter: 48.0,  notes: "⌀48mm · HR series mount" },
-  { id: "M52",    name: "M52×0.75",        type: "MV",    imageDiameter: 41.0,  notes: "⌀41mm · HR 100GigE flat-front opt." },
-  { id: "M72",    name: "M72×0.75",        type: "MV",    imageDiameter: 62.0,  notes: "⌀62mm · SHR series mount" },
-  { id: "M90",    name: "M90×1",           type: "MV",    imageDiameter: 80.0,  notes: "⌀80mm · large-format inspection" },
-  { id: "F47",    name: "F-Mount (⌀43)",   type: "MV",    imageDiameter: 43.3,  notes: "Nikon F · HR adapter option" },
-  { id: "EF44",   name: "EF-Mount (⌀44)",  type: "MV",    imageDiameter: 44.0,  notes: "Canon EF · HR/FXO adapter option" },
-  // Photo mounts
-  { id: "LF",     name: "Large Format",    type: "Photo", imageDiameter: 60.0,  notes: "4×5\" field cameras" },
-  { id: "GFX_m",  name: "GFX Mount",       type: "Photo", imageDiameter: 55.0,  notes: "Fujifilm GFX · medium format" },
-  { id: "RF",     name: "RF Mount",        type: "Photo", imageDiameter: 44.0,  notes: "Canon RF · full frame" },
-  { id: "ZMount", name: "Z Mount",         type: "Photo", imageDiameter: 44.0,  notes: "Nikon Z · full frame" },
-  { id: "EMount", name: "E-Mount",         type: "Photo", imageDiameter: 43.1,  notes: "Sony E · full frame / APS-C" },
-  { id: "Fmount", name: "F-Mount",         type: "Photo", imageDiameter: 43.3,  notes: "Nikon F · full frame" },
-  { id: "MFT_m",  name: "MFT Mount",       type: "Photo", imageDiameter: 21.6,  notes: "Micro Four Thirds" },
-];
-
+const APP_VERSION = __APP_VERSION__;
 const mono = "'Noto Sans Mono', 'Courier New', monospace";
 const sans = "'Noto Sans', Arial, sans-serif";
 
@@ -181,6 +22,8 @@ export default function SensorVisualizer() {
   const [mountTab, setMountTab] = useState("MV");
   // Track collapsed/expanded state for each group
   const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  // Responsive breakpoint
+  const [windowW, setWindowW] = useState(window.innerWidth);
 
   useEffect(() => {
     const measure = () => {
@@ -191,6 +34,15 @@ export default function SensorVisualizer() {
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    const onResize = () => setWindowW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // narrow: panels stack vertically and go full-width below 840px
+  const narrow = windowW < 840;
 
   const toggleSensor = (id) => {
     setSelectedSensors(prev => {
@@ -365,7 +217,7 @@ export default function SensorVisualizer() {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      padding: "28px 12px 40px",
+      padding: narrow ? "16px 10px 28px" : "28px 12px 40px",
     }}>
       {/* ── Header ── */}
       <div style={{ width: "100%", maxWidth: 1200, marginBottom: 18 }}>
@@ -379,19 +231,22 @@ export default function SensorVisualizer() {
             Allied Vision · Machine Vision
           </span>
         </div>
-        <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: -0.3, fontFamily: mono }}>
-          Optical Format Comparator
-        </h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: -0.3, fontFamily: mono }}>
+            Optical Format Comparator
+          </h1>
+          <span style={{ fontSize: 9, color: "#bbb", fontFamily: mono, letterSpacing: 1 }}>v{APP_VERSION}</span>
+        </div>
         <p style={{ fontSize: 11, color: "#999", margin: "3px 0 0" }}>
           FXO · HR · SHR series sensors · select sensors · overlay image circles · drag to check coverage
         </p>
       </div>
 
       {/* ── Three-column layout ── */}
-      <div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 14, alignItems: "flex-start", flexDirection: narrow ? "column" : "row" }}>
 
         {/* ── LEFT: Sensor list with collapsible groups ── */}
-        <SidePanel title="Sensors">
+        <SidePanel title="Sensors" narrow={narrow}>
           <div style={{ padding: "5px 7px", borderBottom: "1px solid #eee", display: "flex", gap: 5 }}>
             {[
               ["All", () => { setSelectedSensors(new Set(SENSOR_DB.map(s => s.id))); setCirclePos(null); }],
@@ -400,7 +255,7 @@ export default function SensorVisualizer() {
               <MiniButton key={label} onClick={fn}>{label}</MiniButton>
             ))}
           </div>
-          <div style={{ overflowY: "auto", maxHeight: 620 }}>
+          <div style={{ overflowY: "auto", maxHeight: narrow ? 320 : 620 }}>
             {SENSOR_GROUPS.map((group) => {
               const isCollapsed = collapsedGroups.has(group.id);
               const selectedInGroup = group.sensors.filter(s => selectedSensors.has(s.id)).length;
@@ -651,7 +506,7 @@ export default function SensorVisualizer() {
           </div>
 
           {/* Info bar */}
-          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", fontSize: 10, color: "#bbb", fontFamily: mono }}>
+          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 10, color: "#bbb", fontFamily: mono }}>
             <span>{n} sensor{n !== 1 ? "s" : ""} selected{mountData ? ` · ${mountData.name} (⌀${mountData.imageDiameter}mm)` : ""}</span>
             {n > 1 && (() => {
               const lg = activeSensors[0], sm = activeSensors[activeSensors.length - 1];
@@ -681,7 +536,7 @@ export default function SensorVisualizer() {
         </div>
 
         {/* ── RIGHT: Mount list ── */}
-        <SidePanel title="Image Circles / Mounts">
+        <SidePanel title="Image Circles / Mounts" narrow={narrow}>
           <div style={{ display: "flex", borderBottom: "1px solid #eee" }}>
             {[["MV", "Machine Vision"], ["Photo", "Photo"]].map(([val, label]) => (
               <button key={val} onClick={() => setMountTab(val)} style={{
@@ -696,7 +551,7 @@ export default function SensorVisualizer() {
           <div style={{ padding: "5px 7px", borderBottom: "1px solid #eee" }}>
             <MiniButton onClick={() => { setActiveMount(null); setCirclePos(null); }}>Clear circle</MiniButton>
           </div>
-          <div style={{ overflowY: "auto", maxHeight: 570 }}>
+          <div style={{ overflowY: "auto", maxHeight: narrow ? 260 : 570 }}>
             {MOUNT_DB.filter(m => m.type === mountTab).map((m) => {
               const isOn = activeMount === m.id;
               const maxD = Math.max(...MOUNT_DB.filter(x => x.type === mountTab).map(x => x.imageDiameter));
@@ -749,10 +604,10 @@ export default function SensorVisualizer() {
 
 // ── Small shared components ────────────────────────────────────────────────────
 
-function SidePanel({ title, children }) {
+function SidePanel({ title, children, narrow = false }) {
   return (
-    <div style={{ flex: "0 0 210px", background: "#fff", border: "1px solid #d8d8d8", borderRadius: 3, overflow: "hidden" }}>
-      <div style={{ padding: "9px 12px 7px", borderBottom: "1px solid #eee", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "#bbb", fontFamily: "'IBM Plex Mono', monospace" }}>
+    <div style={{ flex: narrow ? "1 1 100%" : "0 0 210px", background: "#fff", border: "1px solid #d8d8d8", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ padding: "9px 12px 7px", borderBottom: "1px solid #eee", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "#bbb", fontFamily: mono }}>
         {title}
       </div>
       {children}
@@ -766,7 +621,7 @@ function MiniButton({ onClick, children }) {
       background: "#f5f5f5", border: "1px solid #e0e0e0", color: "#888",
       fontSize: 9, letterSpacing: 1.5, textTransform: "uppercase",
       padding: "5px 10px", borderRadius: 2, cursor: "pointer",
-      fontFamily: "'IBM Plex Mono', monospace",
+      fontFamily: mono,
     }}>{children}</button>
   );
 }

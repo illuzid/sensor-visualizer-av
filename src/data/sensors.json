@@ -1,0 +1,185 @@
+{
+  "_comment": "Sensor database. Add new groups to the 'groups' array. Add sensors to a group's 'sensors' array. All physical dimensions (w, h) are in millimetres.",
+  "_schema": {
+    "group": {
+      "id":      "string  — unique identifier, snake_case, used in code and URLs",
+      "label":   "string  — human-readable display name for the sidebar",
+      "color":   "string  — hex color for UI accents (#rrggbb)",
+      "sensors": "array   — list of sensor objects belonging to this group"
+    },
+    "sensor": {
+      "id":     "string  — unique identifier, e.g. 'fxo_540'. Prefix with group id.",
+      "name":   "string  — short display name shown in the sidebar and tooltip",
+      "format": "string  — industry format label, e.g. '1.2\"', 'APS-C', '35mm FF'",
+      "w":      "number  — sensor width  in millimetres (pixel_pitch_µm × h_pixels / 1000)",
+      "h":      "number  — sensor height in millimetres (pixel_pitch_µm × v_pixels / 1000)",
+      "mp":     "number  — megapixels (approximate, one decimal place)",
+      "note":   "string  — technical specs: sensor die · mount · interface · special features"
+    }
+  },
+  "groups": [
+    {
+      "id": "reference",
+      "label": "Reference Formats",
+      "color": "#555555",
+      "sensors": [
+        { "id": "MF_ref",    "name": "Medium Format",    "format": "GFX",     "w": 43.8,  "h": 32.9,  "mp": 100,  "note": "GFX / IMX461 class" },
+        { "id": "FF_ref",    "name": "Full Frame 35mm",  "format": "35mm",    "w": 36.0,  "h": 24.0,  "mp": 61,   "note": "IMX455 class" },
+        { "id": "APS-C",     "name": "APS-C",            "format": "APS-C",   "w": 23.5,  "h": 15.6,  "mp": 24,   "note": "Typical Nikon APS-C" },
+        { "id": "ind_4_3",   "name": "4/3\" Industrial", "format": "4/3\"",   "w": 17.6,  "h": 13.2,  "mp": 16,   "note": "Type 4/3\"" },
+        { "id": "1_0",       "name": "1\"",              "format": "1\"",     "w": 12.8,  "h": 9.6,   "mp": 9,    "note": "Type 1\"" },
+        { "id": "2_3_ref",   "name": "2/3\"",            "format": "2/3\"",   "w": 8.8,   "h": 6.6,   "mp": 5,    "note": "Type 2/3\"" },
+        { "id": "1_1.8_ref", "name": "1/1.8\"",          "format": "1/1.8\"", "w": 7.18,  "h": 5.32,  "mp": 5,    "note": "Type 1/1.8\"" },
+        { "id": "1_2_ref",   "name": "1/2\"",            "format": "1/2\"",   "w": 6.4,   "h": 4.8,   "mp": 3,    "note": "Type 1/2\"" }
+      ]
+    },
+    {
+      "id": "fxo",
+      "label": "FXO Series (Allied Vision / SVS-Vistek)",
+      "color": "#1a5fcc",
+      "sensors": [
+        {
+          "_comment": "Sony Pregius S 4th gen (2.74µm BSI) ── pixel_pitch × resolution",
+          "id": "fxo_540",  "name": "FXO 540/530 · 24.5MP", "format": "1.2\"",    "w": 14.60, "h": 12.63, "mp": 24.5,
+          "note": "IMX540/530 · 2.74µm · 5328×4608 · C-mount · 10GigE/25GigE/CXP-12"
+        },
+        {
+          "id": "fxo_542",  "name": "FXO 542/532 · 16.1MP", "format": "1\"",      "w": 14.60, "h":  8.33, "mp": 16.1,
+          "note": "IMX542/532 · 2.74µm · 5328×3040 · C-mount · 10GigE/25GigE/CXP-12"
+        },
+        {
+          "id": "fxo_541",  "name": "FXO 541/531 · 20.4MP", "format": "1.1\"sq",  "w": 12.36, "h": 12.36, "mp": 20.4,
+          "note": "IMX541/531 · 2.74µm · 4512×4512 · C-mount · square sensor"
+        },
+        {
+          "id": "fxo_545",  "name": "FXO 545/535 · 12.2MP", "format": "1.1\"",    "w": 11.31, "h":  8.24, "mp": 12.2,
+          "note": "IMX545/535 · 2.74µm · 4128×3008 · C-mount · 10GigE/25GigE/CXP-12"
+        },
+        {
+          "id": "fxo_546",  "name": "FXO 546 · 8.1MP",      "format": "2/3\"sq",  "w":  7.83, "h":  7.80, "mp":  8.1,
+          "note": "IMX546 · 2.74µm · 2856×2848 · C-mount · square sensor · CXP-12"
+        },
+        {
+          "id": "fxo_487",  "name": "FXO 487 · 8.1MP UV",   "format": "2/3\"",    "w":  7.83, "h":  7.80, "mp":  8.1,
+          "note": "IMX487 · 2.74µm · 2856×2848 · UV 200–400nm · 10GigE/CXP-12"
+        },
+        {
+          "id": "fxo_547",  "name": "FXO 547 · 5.1MP",      "format": "1/1.8\"",  "w":  6.77, "h":  5.66, "mp":  5.1,
+          "note": "IMX547 · 2.74µm · 2472×2064 · C-mount · 10GigE/CXP-12"
+        },
+        {
+          "_comment": "Sony Pregius S 3rd gen (4.5µm)",
+          "id": "fxo_420",  "name": "FXO 420 · 7.1MP",      "format": "~1\"",     "w": 14.47, "h":  9.94, "mp":  7.1,
+          "note": "IMX420 · 4.5µm · 3216×2208 · CXP-12 (2×)"
+        },
+        {
+          "id": "fxo_421",  "name": "FXO 421 · 2.8MP",      "format": "2/3\"",    "w":  8.75, "h":  6.62, "mp":  2.8,
+          "note": "IMX421 · 4.5µm · CXP-12 (2×)"
+        },
+        {
+          "id": "fxo_425",  "name": "FXO 425 · 1.8MP",      "format": "~1/2\"",   "w":  7.20, "h":  4.97, "mp":  1.8,
+          "note": "IMX425 · 4.5µm · 1600×1104 · 671fps · CXP-12 (2×)"
+        },
+        {
+          "_comment": "SWIR",
+          "id": "fxo_992",  "name": "FXO 992 · 5.2MP SWIR", "format": "1/1.1\"",  "w":  8.83, "h":  7.07, "mp":  5.2,
+          "note": "IMX992 · 3.45µm · 2560×2048 · SWIR 400–1700nm · 10GigE-T"
+        },
+        {
+          "_comment": "Sony Pregius S 5th gen (2.74µm BSI stacked) — FXO 100GigE",
+          "id": "fxo_925",  "name": "FXO 925 · 24.5MP",     "format": "1.2\"",    "w": 14.56, "h": 12.63, "mp": 24.5,
+          "note": "IMX925 · 2.74µm · 5th gen · 442fps · C-mount · 100GigE"
+        },
+        {
+          "id": "fxo_935",  "name": "FXO 935 · 24.5MP",     "format": "1.2\"",    "w": 14.56, "h": 12.63, "mp": 24.5,
+          "note": "IMX935 · 2.74µm · 5th gen · low-power · C-mount · 100GigE"
+        },
+        {
+          "id": "fxo_926",  "name": "FXO 926 · 12.4MP",     "format": "1/1.1\"",  "w": 11.22, "h":  8.33, "mp": 12.4,
+          "note": "IMX926 · 2.74µm · 5th gen · 661fps · C-mount · 100GigE"
+        },
+        {
+          "id": "fxo_936",  "name": "FXO 936 · 12.4MP",     "format": "1/1.1\"",  "w": 11.22, "h":  8.33, "mp": 12.4,
+          "note": "IMX936 · 2.74µm · 5th gen · low-power · C-mount · 100GigE"
+        }
+      ]
+    },
+    {
+      "id": "hr",
+      "label": "HR Series (Allied Vision / SVS-Vistek)",
+      "color": "#16a085",
+      "sensors": [
+        {
+          "_comment": "HR 10GigE / CXP — M58 mount",
+          "id": "hr_455",    "name": "HR 455 · 61MP",    "format": "35mm FF",    "w": 35.98, "h": 23.99, "mp": 61,
+          "note": "IMX455 · 3.76µm · 9568×6380 · M58 · 10GigE/CXP · rolling · TEC opt."
+        },
+        {
+          "id": "hr_342",    "name": "HR 342 · 22.3MP",  "format": "APS-C",      "w": 22.37, "h": 16.77, "mp": 22.3,
+          "note": "IMX342 · 3.45µm · 6480×4860 · M58 · global shutter"
+        },
+        {
+          "id": "hr_183",    "name": "HR 183 · 20MP",    "format": "1\"",        "w": 13.19, "h":  8.81, "mp": 20,
+          "note": "IMX183 · 2.4µm · 5496×3672 · M58 · rolling"
+        },
+        {
+          "id": "hr_304",    "name": "HR 304 · 12.4MP",  "format": "1.1\"",      "w": 14.19, "h": 10.38, "mp": 12.4,
+          "note": "IMX304 · 3.45µm · 4112×3008 · M58 · global shutter"
+        },
+        {
+          "id": "hr_253",    "name": "HR 253 · 5MP",     "format": "1.1\"",      "w": 14.19, "h": 10.38, "mp":  5,
+          "note": "IMX253 · 3.45µm · M58 · global shutter"
+        },
+        {
+          "id": "hr_265",    "name": "HR 265 · 3.2MP",   "format": "1/1.8\"",    "w":  7.12, "h":  5.33, "mp":  3.2,
+          "note": "IMX265 · 3.45µm · 2064×1544 · M58 · global shutter"
+        },
+        {
+          "_comment": "HR 100GigE — M52/M58/RF mount, Sony IMX927 series (5th gen Pregius S, 2.74µm BSI)",
+          "id": "hr100_927", "name": "HR 927 · 105MP",   "format": "Type 2.5\"", "w": 28.15, "h": 28.15, "mp": 105.5,
+          "note": "IMX927 · 2.74µm · 10272×10272 · global sh. · 100fps · M52/M58/RF"
+        },
+        {
+          "id": "hr100_928", "name": "HR 928 · 68MP",    "format": "Type 2.0\"", "w": 22.62, "h": 22.62, "mp": 68.2,
+          "note": "IMX928 · 2.74µm · 8256×8256 · global sh. · 126fps · M52/M58/RF"
+        },
+        {
+          "id": "hr100_929", "name": "HR 929 · 51MP",    "format": "Type 1.8\"", "w": 22.53, "h": 16.92, "mp": 50.8,
+          "note": "IMX929 · 2.74µm · 8224×6176 · global sh. · 201fps · M52/M58/RF"
+        },
+        {
+          "id": "hr100_947", "name": "HR 947 · 26MP",    "format": "Type 2.5\"", "w": 28.14, "h": 28.14, "mp": 26.4,
+          "note": "IMX947 · 5.48µm · 5136×5136 · global sh. · 383fps · M52/M58/RF"
+        },
+        {
+          "id": "hr100_949", "name": "HR 949 · 13MP",    "format": "Type 1.8\"", "w": 22.53, "h": 16.92, "mp": 12.7,
+          "note": "IMX949 · 5.48µm · 4112×3088 · global sh. · 722fps · M52/M58/RF"
+        }
+      ]
+    },
+    {
+      "id": "shr",
+      "label": "SHR Series (Allied Vision / SVS-Vistek)",
+      "color": "#8e44ad",
+      "sensors": [
+        {
+          "_comment": "SHR cameras: M72 mount, large-format sensors",
+          "id": "shr_811",  "name": "SHR 811 · 245MP",  "format": "4.1\"", "w": 53.95, "h": 35.97, "mp": 245,
+          "note": "IMX811 · 2.81µm · 19200×12800 · M72"
+        },
+        {
+          "id": "shr_411",  "name": "SHR 411 · 151MP",  "format": "4.2\"", "w": 53.36, "h": 40.01, "mp": 151,
+          "note": "IMX411 · 3.76µm · 14192×10640 · M72 · rolling"
+        },
+        {
+          "id": "shr_661",  "name": "SHR 661 · 128MP",  "format": "3.6\"", "w": 46.23, "h": 32.87, "mp": 128,
+          "note": "IMX661 · 3.45µm · 13400×9528 · M72 · global sh."
+        },
+        {
+          "id": "shr_461",  "name": "SHR 461 · 102MP",  "format": "3.4\"", "w": 43.83, "h": 32.87, "mp": 102,
+          "note": "IMX461 · 3.76µm · 11656×8742 · M72 · rolling"
+        }
+      ]
+    }
+  ]
+}
