@@ -1,12 +1,8 @@
+/* global __APP_VERSION__ */
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { SENSOR_GROUPS, SENSOR_DB, MOUNT_DB } from "./data/index.js";
 
-// Load Noto Sans from Google Fonts
-const fontLink = document.createElement("link");
-fontLink.rel = "stylesheet";
-fontLink.href = "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500;600;700&display=swap";
-document.head.appendChild(fontLink);
-
+const APP_VERSION = __APP_VERSION__;
 const mono = "'Noto Sans Mono', 'Courier New', monospace";
 const sans = "'Noto Sans', Arial, sans-serif";
 
@@ -26,6 +22,8 @@ export default function SensorVisualizer() {
   const [mountTab, setMountTab] = useState("MV");
   // Track collapsed/expanded state for each group
   const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  // Responsive breakpoint
+  const [windowW, setWindowW] = useState(window.innerWidth);
 
   useEffect(() => {
     const measure = () => {
@@ -36,6 +34,15 @@ export default function SensorVisualizer() {
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    const onResize = () => setWindowW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // narrow: panels stack vertically and go full-width below 840px
+  const narrow = windowW < 840;
 
   const toggleSensor = (id) => {
     setSelectedSensors(prev => {
@@ -210,7 +217,7 @@ export default function SensorVisualizer() {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      padding: "28px 12px 40px",
+      padding: narrow ? "16px 10px 28px" : "28px 12px 40px",
     }}>
       {/* ── Header ── */}
       <div style={{ width: "100%", maxWidth: 1200, marginBottom: 18 }}>
@@ -224,19 +231,22 @@ export default function SensorVisualizer() {
             Allied Vision · Machine Vision
           </span>
         </div>
-        <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: -0.3, fontFamily: mono }}>
-          Optical Format Comparator
-        </h1>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, margin: 0, letterSpacing: -0.3, fontFamily: mono }}>
+            Optical Format Comparator
+          </h1>
+          <span style={{ fontSize: 9, color: "#bbb", fontFamily: mono, letterSpacing: 1 }}>v{APP_VERSION}</span>
+        </div>
         <p style={{ fontSize: 11, color: "#999", margin: "3px 0 0" }}>
           FXO · HR · SHR series sensors · select sensors · overlay image circles · drag to check coverage
         </p>
       </div>
 
       {/* ── Three-column layout ── */}
-      <div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ width: "100%", maxWidth: 1200, display: "flex", gap: 14, alignItems: "flex-start", flexDirection: narrow ? "column" : "row" }}>
 
         {/* ── LEFT: Sensor list with collapsible groups ── */}
-        <SidePanel title="Sensors">
+        <SidePanel title="Sensors" narrow={narrow}>
           <div style={{ padding: "5px 7px", borderBottom: "1px solid #eee", display: "flex", gap: 5 }}>
             {[
               ["All", () => { setSelectedSensors(new Set(SENSOR_DB.map(s => s.id))); setCirclePos(null); }],
@@ -245,7 +255,7 @@ export default function SensorVisualizer() {
               <MiniButton key={label} onClick={fn}>{label}</MiniButton>
             ))}
           </div>
-          <div style={{ overflowY: "auto", maxHeight: 620 }}>
+          <div style={{ overflowY: "auto", maxHeight: narrow ? 320 : 620 }}>
             {SENSOR_GROUPS.map((group) => {
               const isCollapsed = collapsedGroups.has(group.id);
               const selectedInGroup = group.sensors.filter(s => selectedSensors.has(s.id)).length;
@@ -496,7 +506,7 @@ export default function SensorVisualizer() {
           </div>
 
           {/* Info bar */}
-          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", fontSize: 10, color: "#bbb", fontFamily: mono }}>
+          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 10, color: "#bbb", fontFamily: mono }}>
             <span>{n} sensor{n !== 1 ? "s" : ""} selected{mountData ? ` · ${mountData.name} (⌀${mountData.imageDiameter}mm)` : ""}</span>
             {n > 1 && (() => {
               const lg = activeSensors[0], sm = activeSensors[activeSensors.length - 1];
@@ -526,7 +536,7 @@ export default function SensorVisualizer() {
         </div>
 
         {/* ── RIGHT: Mount list ── */}
-        <SidePanel title="Image Circles / Mounts">
+        <SidePanel title="Image Circles / Mounts" narrow={narrow}>
           <div style={{ display: "flex", borderBottom: "1px solid #eee" }}>
             {[["MV", "Machine Vision"], ["Photo", "Photo"]].map(([val, label]) => (
               <button key={val} onClick={() => setMountTab(val)} style={{
@@ -541,7 +551,7 @@ export default function SensorVisualizer() {
           <div style={{ padding: "5px 7px", borderBottom: "1px solid #eee" }}>
             <MiniButton onClick={() => { setActiveMount(null); setCirclePos(null); }}>Clear circle</MiniButton>
           </div>
-          <div style={{ overflowY: "auto", maxHeight: 570 }}>
+          <div style={{ overflowY: "auto", maxHeight: narrow ? 260 : 570 }}>
             {MOUNT_DB.filter(m => m.type === mountTab).map((m) => {
               const isOn = activeMount === m.id;
               const maxD = Math.max(...MOUNT_DB.filter(x => x.type === mountTab).map(x => x.imageDiameter));
@@ -594,10 +604,10 @@ export default function SensorVisualizer() {
 
 // ── Small shared components ────────────────────────────────────────────────────
 
-function SidePanel({ title, children }) {
+function SidePanel({ title, children, narrow = false }) {
   return (
-    <div style={{ flex: "0 0 210px", background: "#fff", border: "1px solid #d8d8d8", borderRadius: 3, overflow: "hidden" }}>
-      <div style={{ padding: "9px 12px 7px", borderBottom: "1px solid #eee", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "#bbb", fontFamily: "'IBM Plex Mono', monospace" }}>
+    <div style={{ flex: narrow ? "1 1 100%" : "0 0 210px", background: "#fff", border: "1px solid #d8d8d8", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ padding: "9px 12px 7px", borderBottom: "1px solid #eee", fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "#bbb", fontFamily: mono }}>
         {title}
       </div>
       {children}
@@ -611,7 +621,7 @@ function MiniButton({ onClick, children }) {
       background: "#f5f5f5", border: "1px solid #e0e0e0", color: "#888",
       fontSize: 9, letterSpacing: 1.5, textTransform: "uppercase",
       padding: "5px 10px", borderRadius: 2, cursor: "pointer",
-      fontFamily: "'IBM Plex Mono', monospace",
+      fontFamily: mono,
     }}>{children}</button>
   );
 }
