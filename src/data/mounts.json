@@ -1,0 +1,86 @@
+{
+  "_comment": "Optical mount / image-circle database. Add new mounts to the 'mounts' array.",
+  "_schema": {
+    "id":            "string  — unique identifier, e.g. 'C', 'M58', 'RF'",
+    "name":          "string  — full human-readable name shown in UI",
+    "type":          "string  — 'MV' (Machine Vision) | 'Photo' — controls which tab the mount appears in",
+    "imageDiameter": "number  — maximum usable image circle diameter in millimetres",
+    "notes":         "string  — compatibility notes, typical use-case, adapters"
+  },
+  "mounts": [
+    {
+      "_comment": "Machine Vision mounts",
+      "id": "C",      "name": "C-Mount",         "type": "MV",    "imageDiameter": 18.0,
+      "notes": "Max ⌀18mm · most common industrial mount"
+    },
+    {
+      "id": "CS",     "name": "CS-Mount",        "type": "MV",    "imageDiameter": 18.0,
+      "notes": "Like C, but 5mm shorter flange"
+    },
+    {
+      "id": "S",      "name": "S-Mount (M12)",   "type": "MV",    "imageDiameter": 8.0,
+      "notes": "⌀8–10mm · board-level cameras"
+    },
+    {
+      "id": "TFL",    "name": "TFL-Mount (M35)", "type": "MV",    "imageDiameter": 22.0,
+      "notes": "⌀22mm · targets 4/3\" sensor"
+    },
+    {
+      "id": "M42",    "name": "M42×1",           "type": "MV",    "imageDiameter": 28.8,
+      "notes": "⌀28.8mm · industrial & legacy"
+    },
+    {
+      "id": "M58",    "name": "M58×0.75",        "type": "MV",    "imageDiameter": 48.0,
+      "notes": "⌀48mm · HR series primary mount"
+    },
+    {
+      "id": "M52",    "name": "M52×0.75",        "type": "MV",    "imageDiameter": 41.0,
+      "notes": "⌀41mm · HR 100GigE flat-front option"
+    },
+    {
+      "id": "M72",    "name": "M72×0.75",        "type": "MV",    "imageDiameter": 62.0,
+      "notes": "⌀62mm · SHR series primary mount"
+    },
+    {
+      "id": "M90",    "name": "M90×1",           "type": "MV",    "imageDiameter": 80.0,
+      "notes": "⌀80mm · large-format inspection"
+    },
+    {
+      "id": "F47",    "name": "F-Mount (⌀43)",   "type": "MV",    "imageDiameter": 43.3,
+      "notes": "Nikon F · HR adapter option"
+    },
+    {
+      "id": "EF44",   "name": "EF-Mount (⌀44)",  "type": "MV",    "imageDiameter": 44.0,
+      "notes": "Canon EF · HR/FXO adapter option"
+    },
+    {
+      "_comment": "Photo / interchangeable-lens mounts",
+      "id": "LF",     "name": "Large Format",    "type": "Photo", "imageDiameter": 60.0,
+      "notes": "4×5\" field cameras"
+    },
+    {
+      "id": "GFX_m",  "name": "GFX Mount",       "type": "Photo", "imageDiameter": 55.0,
+      "notes": "Fujifilm GFX · medium format"
+    },
+    {
+      "id": "RF",     "name": "RF Mount",        "type": "Photo", "imageDiameter": 44.0,
+      "notes": "Canon RF · full frame"
+    },
+    {
+      "id": "ZMount", "name": "Z Mount",         "type": "Photo", "imageDiameter": 44.0,
+      "notes": "Nikon Z · full frame"
+    },
+    {
+      "id": "EMount", "name": "E-Mount",         "type": "Photo", "imageDiameter": 43.1,
+      "notes": "Sony E · full frame / APS-C"
+    },
+    {
+      "id": "Fmount", "name": "F-Mount",         "type": "Photo", "imageDiameter": 43.3,
+      "notes": "Nikon F · full frame"
+    },
+    {
+      "id": "MFT_m",  "name": "MFT Mount",       "type": "Photo", "imageDiameter": 21.6,
+      "notes": "Micro Four Thirds"
+    }
+  ]
+}
