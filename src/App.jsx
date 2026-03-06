@@ -75,14 +75,14 @@ export default function SensorVisualizer() {
   const ROW_GAP = 36;          // vertical gap between rows
   const MAX_ROW_H = 260;       // max pixel height of a single row
 
+  // availW for row-break decisions
+  const availW = canvasW - PAD_X * 2;
+
   // Scale: fit the tallest sensor into MAX_ROW_H, but also ensure the widest
   // sensor never exceeds availW (important on narrow/mobile screens)
   const maxMmH = n > 0 ? Math.max(...activeSensors.map(s => s.h)) : 1;
   const maxMmW = n > 0 ? Math.max(...activeSensors.map(s => s.w)) : 1;
   const scale  = n > 0 ? Math.min(MAX_ROW_H / maxMmH, availW / maxMmW) : 1;
-
-  // availW for row-break decisions
-  const availW = canvasW - PAD_X * 2;
 
   // Pack sensors into rows: start a new row when running width exceeds availW
   const rows = [];
