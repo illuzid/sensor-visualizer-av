@@ -10,12 +10,8 @@
   "mounts": [
     {
       "_comment": "Machine Vision mounts",
-      "id": "C",      "name": "C-Mount",         "type": "MV",    "imageDiameter": 18.0,
+      "id": "C",      "name": "C-Mount",         "type": "MV",    "imageDiameter": 22.0,
       "notes": "Max ⌀18mm · most common industrial mount"
-    },
-    {
-      "id": "CS",     "name": "CS-Mount",        "type": "MV",    "imageDiameter": 18.0,
-      "notes": "Like C, but 5mm shorter flange"
     },
     {
       "id": "S",      "name": "S-Mount (M12)",   "type": "MV",    "imageDiameter": 8.0,
